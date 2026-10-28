@@ -1,0 +1,385 @@
+/* Design System Oficial — Loja Guarani (Hacib Camasmie & Cia Ltda) */
+
+:root {
+  --color-primary: #1D4ED8;
+  --color-primary-hover: #1E40AF;
+  --color-nav-bg: #1E293B;
+  --color-nav-text: #FFFFFF;
+  --color-bg-app: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-border-input: #CBD5E1;
+  
+  --color-text-main: #0F172A;
+  --color-text-label: #334155;
+  --color-text-muted: #64748B;
+  --color-readonly-bg: #F1F5F9;
+  --color-readonly-text: #475569;
+  
+  --color-success-bg: #DCFCE7;
+  --color-success-text: #166534;
+  --color-success-border: #16A34A;
+
+  --color-warning-bg: #FEF3C7;
+  --color-warning-text: #92400E;
+  --color-warning-border: #D97706;
+
+  --color-danger-bg: #FEE2E2;
+  --color-danger-text: #991B1B;
+  --color-danger-border: #DC2626;
+
+  --color-info-bg: #E0F2FE;
+  --color-info-text: #075985;
+  --color-info-border: #0284C7;
+
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-bg-app);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: var(--font-family-mono);
+}
+
+/* Tipografia */
+h1 { font-size: 24px; font-weight: 700; line-height: 32px; color: var(--color-text-main); }
+h2 { font-size: 18px; font-weight: 600; line-height: 28px; color: var(--color-text-main); }
+h3 { font-size: 16px; font-weight: 600; line-height: 24px; color: var(--color-text-main); }
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-label);
+}
+
+.req-asterisk {
+  color: var(--color-danger-border);
+  font-weight: bold;
+}
+
+/* Inputs & Forms */
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-label);
+  margin-bottom: 6px;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input, select, textarea {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-input);
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-main);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+textarea {
+  height: auto;
+  min-height: 80px;
+  padding: 8px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+input[readonly], select[readonly], textarea[readonly],
+input:disabled, select:disabled, textarea:disabled,
+.readonly-field {
+  background-color: var(--color-readonly-bg) !important;
+  color: var(--color-readonly-text) !important;
+  cursor: not-allowed;
+}
+
+/* Botões */
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: #334155;
+  border-color: #CBD5E1;
+}
+.btn-secondary:hover {
+  background-color: #F1F5F9;
+}
+
+.btn-danger {
+  background-color: var(--color-danger-border);
+  color: #FFFFFF;
+}
+.btn-danger:hover {
+  background-color: #B91C1C;
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* Cards & Containers */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Layout 4/8 */
+.grid-4-8 {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .grid-4-8 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tabelas */
+.table-container {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: #FFFFFF;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+th {
+  background-color: #F8FAFC;
+  color: #475569;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-main);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background-color: #F8FAFC;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.badge-success { background-color: var(--color-success-bg); color: var(--color-success-text); border: 1px solid var(--color-success-border); }
+.badge-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); border: 1px solid var(--color-warning-border); }
+.badge-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); border: 1px solid var(--color-danger-border); }
+.badge-info { background-color: var(--color-info-bg); color: var(--color-info-text); border: 1px solid var(--color-info-border); }
+.badge-neutral { background-color: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+
+/* Barra de Progresso */
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background-color: #E2E8F0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Toasts */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 6px;
+  min-width: 320px;
+  max-width: 480px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  animation: slideIn 0.25s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Modais */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  max-width: 650px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: #F8FAFC;
+}
+
+/* Drawer lateral de ajuda (F1) */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  z-index: 1050;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-panel {
+  width: 380px;
+  max-width: 100%;
+  background-color: #FFFFFF;
+  height: 100%;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlide 0.25s ease-out;
+}
+
+@keyframes drawerSlide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Impressão Limpa do SAT */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .cupom-sat-print, .cupom-sat-print * {
+    visibility: visible;
+  }
+  .cupom-sat-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 300px;
+    font-family: var(--font-family-mono);
+    font-size: 11px;
+  }
+}

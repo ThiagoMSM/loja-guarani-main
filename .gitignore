@@ -1,0 +1,38 @@
+# Dependências
+node_modules/
+*/node_modules/
+
+# Variáveis de ambiente (preservando .env.example)
+.env
+.env.*
+!.env.example
+
+# Bancos de dados SQLite e journals locais
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Compilação e builds de produção
+dist/
+*/dist/
+
+# Logs e cobertura de testes
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+
+# Arquivos de IDE e sistema operacional
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+*.md
+!README.md
+*.pdf

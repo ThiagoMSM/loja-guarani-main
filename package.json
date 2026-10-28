@@ -1,0 +1,21 @@
+{
+  "name": "loja-guarani-monorepo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Sistema de Gestão de Estoque e Vendas — Loja Guarani (Monorepo Zero-Config)",
+  "workspaces": [
+    "loja-guarani-api",
+    "loja-guarani-web"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "dev": "concurrently -n API,WEB -c blue,green \"npm run dev -w loja-guarani-api\" \"npm run dev -w loja-guarani-web\"",
+    "build": "npm run build -w loja-guarani-web",
+    "start": "npm run build && npm run start -w loja-guarani-api",
+    "seed": "npm run seed -w loja-guarani-api",
+    "test": "npm run test -w loja-guarani-api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

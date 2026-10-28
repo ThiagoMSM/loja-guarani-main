@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  idUsuario        Int                   @id @default(autoincrement()) @map("id_usuario")
+  nome             String
+  emailLogin       String                @unique @map("email_login")
+  senhaHash        String                @map("senha_hash")
+  perfil           String                // 'PROPRIETARIO' | 'VENDEDOR'
+  status           String                @default("ATIVO") // 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
+  tentativasFalhas Int                   @default(0) @map("tentativas_falhas")
+  bloqueadoAte     DateTime?             @map("bloqueado_ate")
+  ultimoAcesso     DateTime?             @map("ultimo_acesso")
+  criadoEm         DateTime              @default(now()) @map("criado_em")
+
+  vendedor         Vendedor?
+  ordensEmitidas   OrdemCompra[]
+  movimentacoes    MovimentacaoEstoque[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  idCateg           Int         @id @default(autoincrement()) @map("id_categ")
+  codigoHierarquico String?     @unique @map("codigo_hierarquico") // ex: "1", "1.4", "1.4.6"
+  nome              String
+  descricao         String?
+  status            String      @default("ATIVO") // 'ATIVO' | 'INATIVO'
+  idCategPai        Int?        @map("id_categ_pai")
+
+  categoriaPai      Categoria?  @relation("CategoriaHierarquia", fields: [idCategPai], references: [idCateg], onDelete: Restrict)
+  subcategorias     Categoria[] @relation("CategoriaHierarquia")
+  produtos          Produto[]
+
+  @@map("categorias")
+}
+
+model Fornecedor {
+  idFornec             Int                 @id @default(autoincrement()) @map("id_fornec")
+  cnpj                 String              @unique
+  razSocial            String              @map("raz_social")
+  nomeFantasia         String?             @map("nome_fantasia")
+  contatoPrincipal     String?             @map("contato_principal")
+  status               String              @default("ATIVO") // 'ATIVO' | 'INATIVO'
+  telefone             String?
+  email                String?
+  endereco             String?
+  condicoesPagtoPadrao String?             @map("condicoes_pagto_padrao")
+  prazoMedioDias       Int                 @default(5) @map("prazo_medio_dias")
+
+  produtosFornecidos   ProdutoFornecedor[]
+  lotes                Lote[]
+  ordensCompra         OrdemCompra[]
+
+  @@map("fornecedores")
+}
+
+model Local {
+  idLocal           Int                   @id @default(autoincrement()) @map("id_local")
+  codigo            String                @unique // ex: "GAV-A-01", "PRAT-03"
+  tipoCompartimento String                @default("GAVETEIRO") @map("tipo_compartimento") // GAVETEIRO | PRATELEIRA | ESTANTE | VITRINE | DEPOSITO
+  capacidade        Int
+  status            String                @default("ATIVO") // 'ATIVO' | 'INATIVO'
+  descricao         String?
+
+  lotesAlocados     LoteLocal[]
+  movimentacoes     MovimentacaoEstoque[]
+
+  @@map("locais")
+}
+
+model Produto {
+  idProd           Int                 @id @default(autoincrement()) @map("id_prod")
+  sku              String              @unique // Sequencial >= 1000 ou código aproveitado
+  ean              String?
+  ncm              String              @default("54011012")
+  cfopPadrao       String              @default("5102") @map("cfop_padrao")
+  nome             String
+  descricao        String?
+  unidMedida       String              @default("UN") @map("unid_medida") // UN | ROLO | CONE | PACOTE | METRO | GROSA
+  precoPUnid       Float               @map("preco_p_unid")
+  qtdMinimaVenda   Int                 @default(1) @map("qtd_minima_venda")
+  estoqueAtual     Int                 @default(0) @map("estoque_atual")
+  estoqueReservado Int                 @default(0) @map("estoque_reservado")
+  estoqueMin       Int                 @default(0) @map("estoque_min")
+  status           String              @default("ATIVO") // 'ATIVO' | 'INATIVO'
+  idCateg          Int                 @map("id_categ")
+
+  categoria        Categoria           @relation(fields: [idCateg], references: [idCateg], onDelete: Restrict)
+  lotes            Lote[]
+  fornecedores     ProdutoFornecedor[]
+  itensOc          ItemOC[]
+  itensPedido      ItemPedidoVenda[]
+  itensVenda       ItemVenda[]
+
+  @@map("produtos")
+}
+
+model Lote {
+  idLote             Int                   @id @default(autoincrement()) @map("id_lote")
+  numLote            String                @map("num_lote")
+  idProd             Int                   @map("id_prod")
+  idFornec           Int?                  @map("id_fornec")
+  idOc               Int?                  @map("id_oc")
+  numeroNf           String?               @map("numero_nf")
+  dataCompra         DateTime              @default(now()) @map("data_compra")
+  valorCompra        Float                 @map("valor_compra")
+  dataFabricacao     DateTime?             @map("data_fabricacao")
+  dataValidade       DateTime?             @map("data_validade")
+  quantidadeRecebida Int                   @map("quantidade_recebida")
+  quantidadeAtual    Int                   @map("quantidade_atual")
+  status             String                @default("DISPONIVEL") // DISPONIVEL | ESGOTADO | VENCIDO | BLOQUEADO | BAIXADO_DESCARTE
+
+  produto            Produto               @relation(fields: [idProd], references: [idProd], onDelete: Restrict)
+  fornecedor         Fornecedor?           @relation(fields: [idFornec], references: [idFornec], onDelete: Restrict)
+  ordemCompra        OrdemCompra?          @relation(fields: [idOc], references: [idOc], onDelete: SetNull)
+  locais             LoteLocal[]
+  itensVenda         ItemVenda[]
+  movimentacoes      MovimentacaoEstoque[]
+
+  @@unique([idProd, numLote])
+  @@map("lotes")
+}
+
+model ProdutoFornecedor {
+  idProd             Int        @map("id_prod")
+  idFornec           Int        @map("id_fornec")
+  precoCustoAcordado Float?     @map("preco_custo_acordado")
+  leadTimeDias       Int        @default(7) @map("lead_time_dias")
+
+  produto            Produto    @relation(fields: [idProd], references: [idProd], onDelete: Cascade)
+  fornecedor         Fornecedor @relation(fields: [idFornec], references: [idFornec], onDelete: Cascade)
+
+  @@id([idProd, idFornec])
+  @@map("produto_fornecedor")
+}
+
+model LoteLocal {
+  idLote     Int   @map("id_lote")
+  idLocal    Int   @map("id_local")
+  quantidade Int
+
+  lote       Lote  @relation(fields: [idLote], references: [idLote], onDelete: Cascade)
+  local      Local @relation(fields: [idLocal], references: [idLocal], onDelete: Restrict)
+
+  @@id([idLote, idLocal])
+  @@map("lote_local")
+}
+
+model Vendedor {
+  idVend       Int           @id @default(autoincrement()) @map("id_vend")
+  idUsuario    Int           @unique @map("id_usuario")
+  cpf          String        @unique
+  cargo        String        @default("Vendedor Balconista")
+  telefone     String?
+  email        String?
+
+  usuario      Usuario       @relation(fields: [idUsuario], references: [idUsuario], onDelete: Restrict)
+  pedidosVenda PedidoVenda[]
+  vendas       Venda[]
+
+  @@map("vendedores")
+}
+
+model Cliente {
+  idCliente    Int           @id @default(autoincrement()) @map("id_cliente")
+  nome         String
+  cpfCnpj      String?       @unique @map("cpf_cnpj")
+  status       String        @default("ATIVO") // 'ATIVO' | 'INATIVO' | 'ANONIMIZADO'
+  telefone     String?
+  endereco     String?
+  email        String?
+
+  pedidosVenda PedidoVenda[]
+  vendas       Venda[]
+
+  @@map("clientes")
+}
+
+model OrdemCompra {
+  idOc                Int       @id @default(autoincrement()) @map("id_oc")
+  idFornec            Int       @map("id_fornec")
+  idUsuarioEmissor    Int       @map("id_usuario_emissor")
+  dataEmissao         DateTime  @default(now()) @map("data_emissao")
+  dataEntregaPrevista DateTime? @map("data_entrega_prevista")
+  condicoesPagto      String?   @map("condicoes_pagto")
+  valorTotalEstimado  Float     @default(0) @map("valor_total_estimado")
+  status              String    @default("AGUARDANDO_RECEBIMENTO") // AGUARDANDO_RECEBIMENTO | PARCIALMENTE_ATENDIDA | ATENDIDA | CANCELADA
+
+  fornecedor          Fornecedor @relation(fields: [idFornec], references: [idFornec], onDelete: Restrict)
+  emissor             Usuario    @relation(fields: [idUsuarioEmissor], references: [idUsuario], onDelete: Restrict)
+  itens               ItemOC[]
+  lotesRecebidos      Lote[]
+
+  @@map("ordens_compra")
+}
+
+model ItemOC {
+  idOc               Int         @map("id_oc")
+  idProd             Int         @map("id_prod")
+  quantidadePedida   Int         @map("quantidade_pedida")
+  quantidadeRecebida Int         @default(0) @map("quantidade_recebida")
+  precoUnitCompra    Float       @map("preco_unit_compra")
+
+  ordemCompra        OrdemCompra @relation(fields: [idOc], references: [idOc], onDelete: Cascade)
+  produto            Produto     @relation(fields: [idProd], references: [idProd], onDelete: Restrict)
+
+  @@id([idOc, idProd])
+  @@map("itens_oc")
+}
+
+model PedidoVenda {
+  idPedido     Int               @id @default(autoincrement()) @map("id_pedido")
+  idCliente    Int?              @map("id_cliente")
+  idVend       Int               @map("id_vend")
+  dataPedido   DateTime          @default(now()) @map("data_pedido")
+  reservaAtiva Boolean           @default(true) @map("reserva_ativa")
+  status       String            @default("AGUARDANDO_PAGAMENTO") // AGUARDANDO_PAGAMENTO | FATURADO | CANCELADO
+
+  cliente      Cliente?          @relation(fields: [idCliente], references: [idCliente], onDelete: SetNull)
+  vendedor     Vendedor          @relation(fields: [idVend], references: [idVend], onDelete: Restrict)
+  itens        ItemPedidoVenda[]
+  vendas       Venda[]
+
+  @@map("pedidos_venda")
+}
+
+model ItemPedidoVenda {
+  idPedido   Int         @map("id_pedido")
+  idProd     Int         @map("id_prod")
+  quantidade Int
+  precoUnit  Float       @map("preco_unit")
+
+  pedido     PedidoVenda @relation(fields: [idPedido], references: [idPedido], onDelete: Cascade)
+  produto    Produto     @relation(fields: [idProd], references: [idProd], onDelete: Restrict)
+
+  @@id([idPedido, idProd])
+  @@map("itens_pedido_venda")
+}
+
+model Venda {
+  idVenda        Int          @id @default(autoincrement()) @map("id_venda")
+  idPedido       Int?         @map("id_pedido")
+  idCliente      Int?         @map("id_cliente")
+  idVend         Int          @map("id_vend")
+  cpfCnpjNota    String?      @map("cpf_cnpj_nota")
+  dataVenda      DateTime     @default(now()) @map("data_venda")
+  formaPagamento String       @map("forma_pagamento") // DINHEIRO | PIX | CARTAO_DEBITO | CARTAO_CREDITO
+  desconto       Float        @default(0)
+  valorTotal     Float        @map("valor_total")
+  numeroCupomSat String?      @map("numero_cupom_sat")
+  chaveAcessoSat String?      @unique @map("chave_acesso_sat")
+  xmlSatStatus   String       @default("EMITIDO") @map("xml_sat_status") // EMITIDO | PENDENTE_CONTINGENCIA
+  xmlSatConteudo String?      @map("xml_sat_conteudo")
+  status         String       @default("CONFIRMADA") // CONFIRMADA | ESTORNADA
+
+  pedido         PedidoVenda? @relation(fields: [idPedido], references: [idPedido], onDelete: SetNull)
+  cliente        Cliente?     @relation(fields: [idCliente], references: [idCliente], onDelete: SetNull)
+  vendedor       Vendedor     @relation(fields: [idVend], references: [idVend], onDelete: Restrict)
+  itens          ItemVenda[]
+
+  @@map("vendas")
+}
+
+model ItemVenda {
+  idVenda         Int     @map("id_venda")
+  idLote          Int     @map("id_lote")
+  idProd          Int     @map("id_prod")
+  quantidade      Int
+  precoUnitPratic Float   @map("preco_unit_pratic")
+  cfopAplicado    String  @default("5102") @map("cfop_aplicado")
+  ncmAplicado     String  @map("ncm_aplicado")
+
+  venda           Venda   @relation(fields: [idVenda], references: [idVenda], onDelete: Cascade)
+  lote            Lote    @relation(fields: [idLote], references: [idLote], onDelete: Restrict)
+  produto         Produto @relation(fields: [idProd], references: [idProd], onDelete: Restrict)
+
+  @@id([idVenda, idLote])
+  @@map("itens_venda")
+}
+
+model MovimentacaoEstoque {
+  idMov         Int      @id @default(autoincrement()) @map("id_mov")
+  idLote        Int      @map("id_lote")
+  idLocal       Int?     @map("id_local")
+  tipo          String   // 'ENTRADA' | 'BAIXA'
+  quantidade    Int
+  justificativa String   // QUEBRA | VENCIMENTO | ROUBO | INVENTARIO | RECEBIMENTO | VENDA
+  observacao    String?
+  idUsuario     Int      @map("id_usuario")
+  dataHora      DateTime @default(now()) @map("data_hora")
+
+  lote          Lote     @relation(fields: [idLote], references: [idLote], onDelete: Restrict)
+  local         Local?   @relation(fields: [idLocal], references: [idLocal], onDelete: Restrict)
+  usuario       Usuario  @relation(fields: [idUsuario], references: [idUsuario], onDelete: Restrict)
+
+  @@map("movimentacoes_estoque")
+}
