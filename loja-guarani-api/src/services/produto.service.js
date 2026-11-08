@@ -66,13 +66,13 @@ class ProdutoService {
           (!l.dataValidade || new Date(l.dataValidade) >= hoje)
       );
       const saldoFisicoDisponivel = lotesValidos.reduce((acc, l) => acc + l.quantidadeAtual, 0);
-      const saldoLivre = Math.max(0, p.estoqueAtual - p.estoqueReservado);
+      const saldoLivre = Math.max(0, saldoFisicoDisponivel - p.estoqueReservado);
 
       return {
         ...p,
         saldoFisicoDisponivel,
         saldoLivre,
-        emAlertaMinimo: p.estoqueAtual <= p.estoqueMin && p.estoqueMin > 0
+        emAlertaMinimo: saldoLivre <= p.estoqueMin && p.estoqueMin > 0
       };
     });
   }
@@ -99,12 +99,22 @@ class ProdutoService {
       throw new ErroNaoEncontrado("Produto não encontrado.");
     }
 
-    const saldoLivre = Math.max(0, produto.estoqueAtual - produto.estoqueReservado);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const lotesValidos = produto.lotes.filter(
+      (l) =>
+        l.status === "DISPONIVEL" &&
+        l.quantidadeAtual > 0 &&
+        (!l.dataValidade || new Date(l.dataValidade) >= hoje)
+    );
+    const saldoFisicoDisponivel = lotesValidos.reduce((acc, l) => acc + l.quantidadeAtual, 0);
+    const saldoLivre = Math.max(0, saldoFisicoDisponivel - produto.estoqueReservado);
 
     return {
       ...produto,
+      saldoFisicoDisponivel,
       saldoLivre,
-      emAlertaMinimo: produto.estoqueAtual <= produto.estoqueMin && produto.estoqueMin > 0
+      emAlertaMinimo: saldoLivre <= produto.estoqueMin && produto.estoqueMin > 0
     };
   }
 
@@ -159,11 +169,23 @@ class ProdutoService {
     const ncmLimpo = ncm ? limparDigitos(ncm).slice(0, 8) : "54011012";
     const cfopLimpo = cfopPadrao ? limparDigitos(cfopPadrao).slice(0, 4) : "5102";
 
+    let eanLimpo = null;
+    if (ean && String(ean).trim()) {
+      const eanStr = String(ean).trim();
+      if (/\D/.test(eanStr)) {
+        throw new ErroDeNegocio("Código EAN inválido. O padrão de barras comercial deve conter apenas dígitos numéricos.");
+      }
+      eanLimpo = limparDigitos(eanStr);
+      if (eanLimpo.length !== 13 && eanLimpo.length !== 8 && eanLimpo.length !== 14) {
+        throw new ErroDeNegocio("Código EAN inválido. O padrão de barras comercial deve conter 13 dígitos numéricos (ou 8 para EAN-8).");
+      }
+    }
+
     const novoProduto = await prisma.$transaction(async (tx) => {
       const prod = await tx.produto.create({
         data: {
           sku,
-          ean: ean ? String(ean).trim() : null,
+          ean: eanLimpo,
           ncm: ncmLimpo,
           cfopPadrao: cfopLimpo,
           nome,
@@ -181,6 +203,19 @@ class ProdutoService {
       if (loteInicial && Number(loteInicial.quantidade) > 0) {
         const qtdInicial = Number(loteInicial.quantidade);
         const valorCompra = Number(loteInicial.valorCompra || Number(precoPUnid) * 0.5);
+
+        const dVal = loteInicial.dataValidade ? new Date(loteInicial.dataValidade) : null;
+        const dFab = loteInicial.dataFabricacao ? new Date(loteInicial.dataFabricacao) : null;
+        const dComp = loteInicial.dataCompra ? new Date(loteInicial.dataCompra) : new Date();
+
+        if (dVal) {
+          if (dFab && dVal < dFab) {
+            throw new ErroDeNegocio("A data de validade não pode ser anterior à data de fabricação do lote.");
+          }
+          if (dVal < dComp) {
+            throw new ErroDeNegocio("A data de validade não pode ser anterior à data de compra/fabricação do lote.");
+          }
+        }
 
         const loteCriado = await tx.lote.create({
           data: {
@@ -252,11 +287,28 @@ class ProdutoService {
       }
     }
 
+    let eanLimpo = undefined;
+    if (dados.ean !== undefined) {
+      if (dados.ean && String(dados.ean).trim()) {
+        const eanStr = String(dados.ean).trim();
+        if (/\D/.test(eanStr)) {
+          throw new ErroDeNegocio("Código EAN inválido. O padrão de barras comercial deve conter apenas dígitos numéricos.");
+        }
+        const limpo = limparDigitos(eanStr);
+        if (limpo.length !== 13 && limpo.length !== 8 && limpo.length !== 14) {
+          throw new ErroDeNegocio("Código EAN inválido. O padrão de barras comercial deve conter 13 dígitos numéricos (ou 8 para EAN-8).");
+        }
+        eanLimpo = limpo;
+      } else {
+        eanLimpo = null;
+      }
+    }
+
     return prisma.produto.update({
       where: { idProd: Number(idProd) },
       data: {
         sku: dados.sku ? String(dados.sku).trim() : undefined,
-        ean: dados.ean !== undefined ? (dados.ean ? String(dados.ean).trim() : null) : undefined,
+        ean: eanLimpo,
         ncm: dados.ncm ? limparDigitos(dados.ncm).slice(0, 8) : undefined,
         cfopPadrao: dados.cfopPadrao ? limparDigitos(dados.cfopPadrao).slice(0, 4) : undefined,
         nome: dados.nome || undefined,

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 const { ErroDeNegocio, ErroNaoAutorizado, ErroProibido, ErroNaoEncontrado } = require("../lib/errors");
 const { getConfig, isBusinessHoursNow } = require("../config/runtime-config");
+const { validarCPF, limparDigitos } = require("../lib/validators");
 
 class AuthService {
   async login({ emailLogin, senha }) {
@@ -131,6 +132,10 @@ class AuthService {
       throw new ErroDeNegocio("Nome, e-mail, senha e perfil são obrigatórios.");
     }
 
+    if (senha.trim().length < 6) {
+      throw new ErroDeNegocio("A senha inicial do usuário deve conter no mínimo 6 caracteres.");
+    }
+
     const emailLimpo = emailLogin.trim().toLowerCase();
     const existente = await prisma.usuario.findUnique({
       where: { emailLogin: emailLimpo }
@@ -138,6 +143,23 @@ class AuthService {
 
     if (existente) {
       throw new ErroDeNegocio("E-mail de login já cadastrado para outro usuário.");
+    }
+
+    let cpfLimpo = null;
+    if (perfil === "VENDEDOR") {
+      if (!cpf) {
+        throw new ErroDeNegocio("CPF é obrigatório para cadastrar perfil Vendedor.");
+      }
+      cpfLimpo = limparDigitos(cpf);
+      if (!validarCPF(cpfLimpo)) {
+        throw new ErroDeNegocio("CPF do vendedor inválido. Verifique os dígitos informados.");
+      }
+      const cpfExistente = await prisma.vendedor.findUnique({
+        where: { cpf: cpfLimpo }
+      });
+      if (cpfExistente) {
+        throw new ErroDeNegocio("CPF já cadastrado para outro vendedor.");
+      }
     }
 
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -154,13 +176,10 @@ class AuthService {
       });
 
       if (perfil === "VENDEDOR") {
-        if (!cpf) {
-          throw new ErroDeNegocio("CPF é obrigatório para cadastrar perfil Vendedor.");
-        }
         await tx.vendedor.create({
           data: {
             idUsuario: usuario.idUsuario,
-            cpf,
+            cpf: cpfLimpo,
             cargo: cargo || "Vendedor Balconista",
             telefone: telefone || null,
             email: emailLimpo

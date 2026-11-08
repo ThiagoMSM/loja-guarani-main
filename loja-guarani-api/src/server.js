@@ -11,6 +11,11 @@ async function bootstrap() {
     await aplicarConstraintsBanco(prisma);
     console.log("[DATABASE] Integridade do SGBD SQLite e PRAGMAs configurados.");
 
+    // Atualização automática de status de lotes vencidos
+    const loteService = new (require("./services/lote.service"))();
+    await loteService.atualizarStatusLotesVencidos();
+    console.log("[ESTOQUE] Rotina de verificação de lotes vencidos concluída.");
+
     app.listen(PORT, () => {
       console.log(`[Loja Guarani API] Servidor MVC + Service Layer rodando em http://localhost:${PORT}`);
     });

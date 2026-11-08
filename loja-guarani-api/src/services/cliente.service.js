@@ -1,6 +1,6 @@
 const prisma = require("../lib/prisma");
 const { ErroDeNegocio, ErroNaoEncontrado } = require("../lib/errors");
-const { mascararDocumentoLgpd, limparDigitos } = require("../lib/validators");
+const { mascararDocumentoLgpd, limparDigitos, validarCPF, validarCNPJ } = require("../lib/validators");
 
 class ClienteService {
   async listar(filtros = {}, perfilUsuario = "PROPRIETARIO") {
@@ -63,6 +63,11 @@ class ClienteService {
 
     let docLimpo = cpfCnpj ? limparDigitos(cpfCnpj) : null;
     if (docLimpo) {
+      const ehCpfValido = docLimpo.length === 11 && validarCPF(docLimpo);
+      const ehCnpjValido = docLimpo.length === 14 && validarCNPJ(docLimpo);
+      if (!ehCpfValido && !ehCnpjValido) {
+        throw new ErroDeNegocio("CPF ou CNPJ inválido. Verifique os dígitos verificadores informados.");
+      }
       const existente = await prisma.cliente.findFirst({
         where: { cpfCnpj: docLimpo }
       });
@@ -88,6 +93,11 @@ class ClienteService {
 
     let docLimpo = dados.cpfCnpj !== undefined ? (dados.cpfCnpj ? limparDigitos(dados.cpfCnpj) : null) : undefined;
     if (docLimpo) {
+      const ehCpfValido = docLimpo.length === 11 && validarCPF(docLimpo);
+      const ehCnpjValido = docLimpo.length === 14 && validarCNPJ(docLimpo);
+      if (!ehCpfValido && !ehCnpjValido) {
+        throw new ErroDeNegocio("CPF ou CNPJ inválido. Verifique os dígitos verificadores informados.");
+      }
       const existente = await prisma.cliente.findFirst({
         where: {
           cpfCnpj: docLimpo,

@@ -6,6 +6,7 @@ const app = require("../src/app");
 const prisma = require("../src/lib/prisma");
 const { aplicarConstraintsBanco, removerTriggerAppendOnlyParaSeed } = require("../src/lib/db-constraints");
 const { updateConfig } = require("../src/config/runtime-config");
+const { gerarCPFValido } = require("../src/lib/validators");
 
 jest.setTimeout(60000);
 
@@ -58,7 +59,7 @@ describe("Módulo de Segurança e Autenticação (UC13, RNF03, RNF04, RNF05, RNF
         emailLogin: emailTeste,
         senha: "SenhaValida@123",
         perfil: "VENDEDOR",
-        cpf: `999.${Math.floor(100 + Math.random() * 900)}.777-88`
+        cpf: gerarCPFValido()
       });
 
     // 2. Errar a senha 5 vezes consecutivas

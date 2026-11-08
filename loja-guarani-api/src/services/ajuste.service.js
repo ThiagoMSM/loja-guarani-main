@@ -74,12 +74,22 @@ class AjusteService {
       throw new ErroDeNegocio("Tipo de ajuste deve ser ENTRADA ou BAIXA.");
     }
 
-    // Regra RN19: Justificativas permitidas para ajuste manual
-    const justificativasValidas = ["QUEBRA", "VENCIMENTO", "ROUBO", "INVENTARIO"];
-    if (!justificativasValidas.includes(justificativa)) {
-      throw new ErroDeNegocio(
-        `Justificativa inválida. Opções permitidas: ${justificativasValidas.join(", ")}.`
-      );
+    // Regra RN19 / Item 5.A: Justificativas permitidas por tipo de operação
+    const justificativasEntrada = ["INVENTARIO", "DEVOLUCAO", "CORRECAO_SISTEMA"];
+    const justificativasBaixa = ["QUEBRA", "VENCIMENTO", "ROUBO", "INVENTARIO"];
+
+    if (tipo === "ENTRADA") {
+      if (!justificativasEntrada.includes(justificativa)) {
+        throw new ErroDeNegocio(
+          `Justificativa '${justificativa}' incompatível com operação de ENTRADA. Opções permitidas: ${justificativasEntrada.join(", ")}.`
+        );
+      }
+    } else {
+      if (!justificativasBaixa.includes(justificativa)) {
+        throw new ErroDeNegocio(
+          `Justificativa '${justificativa}' incompatível com operação de BAIXA. Opções permitidas: ${justificativasBaixa.join(", ")}.`
+        );
+      }
     }
 
     // Regra de Auditoria: Observação detalhada obrigatória com no mínimo 15 caracteres

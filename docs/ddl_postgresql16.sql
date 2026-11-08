@@ -73,7 +73,12 @@ CREATE TABLE lotes (
   quantidade_atual INTEGER NOT NULL CHECK (quantidade_atual >= 0),
   status VARCHAR(15) NOT NULL DEFAULT 'DISPONIVEL' CHECK (status IN ('DISPONIVEL', 'ESGOTADO', 'VENCIDO', 'BLOQUEADO')),
   UNIQUE (id_prod, num_lote),
-  CONSTRAINT chk_datas_lote CHECK (data_validade IS NULL OR data_validade >= data_compra)
+  CONSTRAINT chk_datas_lote CHECK (
+    data_validade IS NULL OR (
+      (data_compra IS NULL OR data_validade >= data_compra) AND
+      (data_fabricacao IS NULL OR data_validade >= data_fabricacao)
+    )
+  )
 );
 
 CREATE TABLE produto_fornecedor (

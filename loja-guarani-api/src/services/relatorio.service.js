@@ -116,19 +116,43 @@ class RelatorioService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
+    // Sincronizar status de lotes expirados
+    await prisma.lote.updateMany({
+      where: {
+        status: "DISPONIVEL",
+        dataValidade: {
+          lt: hoje
+        }
+      },
+      data: {
+        status: "VENCIDO"
+      }
+    });
+
     const itens = produtos.map((p) => {
       const lotesValidos = p.lotes.filter(
         (l) =>
           l.status === "DISPONIVEL" &&
+          l.quantidadeAtual > 0 &&
           (!l.dataValidade || new Date(l.dataValidade) >= hoje)
       );
-      const saldoLivre = Math.max(0, p.estoqueAtual - p.estoqueReservado);
+      const saldoFisicoDisponivel = lotesValidos.reduce((acc, l) => acc + l.quantidadeAtual, 0);
+      const saldoLivre = Math.max(0, saldoFisicoDisponivel - p.estoqueReservado);
+      const saldoVencido = p.lotes
+        .filter((l) => l.status === "VENCIDO" || (l.dataValidade && new Date(l.dataValidade) < hoje))
+        .reduce((acc, l) => acc + l.quantidadeAtual, 0);
 
       // Determinar situação
       let sit = "DISPONIVEL";
-      if (p.estoqueAtual === 0) {
+      const temLoteVencido = p.lotes.some(
+        (l) => l.status === "VENCIDO" || (l.dataValidade && new Date(l.dataValidade) < hoje)
+      );
+
+      if (saldoFisicoDisponivel === 0 && temLoteVencido && p.estoqueAtual > 0) {
+        sit = "LOTE_VENCIDO";
+      } else if (saldoLivre === 0) {
         sit = "EM_FALTA";
-      } else if (p.estoqueAtual <= p.estoqueMin) {
+      } else if (saldoLivre <= p.estoqueMin) {
         sit = "ABAIXO_MINIMO";
       } else if (p.estoqueReservado > 0) {
         sit = "RESERVADO";
@@ -160,6 +184,8 @@ class RelatorioService {
         precoPUnid: p.precoPUnid,
         estoqueTotal: p.estoqueAtual,
         estoqueReservado: p.estoqueReservado,
+        saldoFisicoDisponivel,
+        saldoVencido,
         saldoLivre,
         estoqueMin: p.estoqueMin,
         situacao: sit,

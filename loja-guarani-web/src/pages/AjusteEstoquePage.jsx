@@ -23,6 +23,20 @@ import {
   Package
 } from "lucide-react";
 
+const JUSTIFICATIVAS_POR_TIPO = {
+  BAIXA: [
+    { valor: "VENCIMENTO", label: "Vencimento / Prazo Expirado" },
+    { valor: "QUEBRA", label: "Quebra / Avaria Física" },
+    { valor: "ROUBO", label: "Furto / Roubo Identificado" },
+    { valor: "INVENTARIO", label: "Ajuste Negativo de Inventário" }
+  ],
+  ENTRADA: [
+    { valor: "INVENTARIO", label: "Sobra de Inventário / Contagem Física" },
+    { valor: "DEVOLUCAO", label: "Devolução de Mercadoria / Amostra" },
+    { valor: "CORRECAO_SISTEMA", label: "Regularização de Saldo / Ajuste Administrativo" }
+  ]
+};
+
 export function AjusteEstoquePage() {
   const [searchParams] = useSearchParams();
   const { usuario } = useAuth();
@@ -61,6 +75,14 @@ export function AjusteEstoquePage() {
     carregarProdutos();
     carregarHistorico();
   }, []);
+
+  const mudarTipo = (novoTipo) => {
+    setForm((prev) => ({
+      ...prev,
+      tipo: novoTipo,
+      justificativa: novoTipo === "ENTRADA" ? "INVENTARIO" : "VENCIMENTO"
+    }));
+  };
 
   // Tratar searchParams caso venha de um atalho externo (ex: Relatório de Validade)
   useEffect(() => {
@@ -383,7 +405,7 @@ export function AjusteEstoquePage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <button
                   type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, tipo: "BAIXA" }))}
+                  onClick={() => mudarTipo("BAIXA")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -404,7 +426,7 @@ export function AjusteEstoquePage() {
 
                 <button
                   type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, tipo: "ENTRADA" }))}
+                  onClick={() => mudarTipo("ENTRADA")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -504,10 +526,11 @@ export function AjusteEstoquePage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, justificativa: e.target.value }))}
                   required
                 >
-                  <option value="VENCIMENTO">Vencimento / Prazo Expirado</option>
-                  <option value="QUEBRA">Quebra / Avaria Física</option>
-                  <option value="ROUBO">Furto / Roubo Identificado</option>
-                  <option value="INVENTARIO">Ajuste de Inventário / Contagem</option>
+                  {(JUSTIFICATIVAS_POR_TIPO[form.tipo] || JUSTIFICATIVAS_POR_TIPO.BAIXA).map((j) => (
+                    <option key={j.valor} value={j.valor}>
+                      {j.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -731,6 +754,9 @@ export function AjusteEstoquePage() {
               <option value="QUEBRA">QUEBRA</option>
               <option value="ROUBO">ROUBO</option>
               <option value="INVENTARIO">INVENTARIO</option>
+              <option value="DEVOLUCAO">DEVOLUCAO</option>
+              <option value="CORRECAO_SISTEMA">CORRECAO_SISTEMA</option>
+              <option value="RECEBIMENTO">RECEBIMENTO</option>
             </select>
 
             <button

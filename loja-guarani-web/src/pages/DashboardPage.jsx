@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { formatarMoeda } from "../utils/formatters";
+import { formatarMoeda, validarCPF, mascaraCPF, limparDigitos } from "../utils/formatters";
 import { Modal } from "../components/Modal";
 import { Badge } from "../components/Badge";
 import {
@@ -104,6 +104,17 @@ export function DashboardPage() {
 
   const handleCriarUsuario = async (e) => {
     e.preventDefault();
+    if (!novoUsuario.senha || novoUsuario.senha.trim().length < 6) {
+      alertaErro("A senha inicial deve conter no mínimo 6 caracteres.");
+      return;
+    }
+    if (novoUsuario.perfil === "VENDEDOR") {
+      const cpfLimpo = limparDigitos(novoUsuario.cpf);
+      if (!validarCPF(cpfLimpo)) {
+        alertaErro("CPF do vendedor inválido. Verifique os dígitos informados.");
+        return;
+      }
+    }
     try {
       await api.post("/usuarios", novoUsuario);
       alertaSucesso("Usuário criado com sucesso!");
@@ -424,6 +435,7 @@ export function DashboardPage() {
                 <input
                   type="password"
                   required
+                  minLength={6}
                   value={novoUsuario.senha}
                   onChange={(e) => setNovoUsuario({ ...novoUsuario, senha: e.target.value })}
                   placeholder="Mínimo 6 caracteres"
@@ -446,7 +458,7 @@ export function DashboardPage() {
                     type="text"
                     required
                     value={novoUsuario.cpf}
-                    onChange={(e) => setNovoUsuario({ ...novoUsuario, cpf: e.target.value })}
+                    onChange={(e) => setNovoUsuario({ ...novoUsuario, cpf: mascaraCPF(e.target.value) })}
                     placeholder="000.000.000-00"
                   />
                 </label>

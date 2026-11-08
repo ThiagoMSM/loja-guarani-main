@@ -91,6 +91,14 @@ export function ProdutosPage() {
       return;
     }
 
+    if (ean && ean.trim()) {
+      const eanLimpo = ean.replace(/\D/g, "");
+      if (eanLimpo.length !== 13 && eanLimpo.length !== 8 && eanLimpo.length !== 14) {
+        alertaErro("Código EAN inválido. O padrão de barras comercial deve conter 13 dígitos numéricos (ou 8 para EAN-8).");
+        return;
+      }
+    }
+
     try {
       const payload = {
         sku: sku || undefined,
@@ -202,10 +210,12 @@ export function ProdutosPage() {
                   <span>Código EAN-13</span>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={13}
                     className="mono"
-                    placeholder="789..."
+                    placeholder="7890000000000"
                     value={ean}
-                    onChange={(e) => setEan(e.target.value)}
+                    onChange={(e) => setEan(e.target.value.replace(/\D/g, "").slice(0, 13))}
                   />
                 </label>
               </div>

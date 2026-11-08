@@ -39,7 +39,9 @@ class SatFiscalService {
     itens,
     valorTotal,
     desconto,
-    formaPagamento
+    formaPagamento,
+    valorPago,
+    troco
   }) {
     const dataEmissao = new Date();
     const dEmi = dataEmissao.toISOString().slice(0, 10).replace(/-/g, "");
@@ -141,8 +143,9 @@ class SatFiscalService {
     <pgto>
       <MP>
         <cMP>${formaPagtoCod}</cMP>
-        <vMP>${Number(valorTotal).toFixed(2)}</vMP>
+        <vMP>${Number(valorPago || valorTotal).toFixed(2)}</vMP>
       </MP>
+      ${Number(troco || 0) > 0 ? `<vTroco>${Number(troco).toFixed(2)}</vTroco>` : ""}
     </pgto>
   </infCFe>
 </CFe>`;
@@ -154,6 +157,8 @@ class SatFiscalService {
     desconto = 0,
     formaPagamento = "PIX",
     cpfCnpjNota = null,
+    valorPago = null,
+    troco = 0,
     simularFalhaSat = false
   }) {
     // Verificar gatilho de simulação de falha SAT (Exceção E3 / Rollback)
@@ -206,7 +211,9 @@ class SatFiscalService {
       itens: itensDetalhados,
       valorTotal,
       desconto,
-      formaPagamento
+      formaPagamento,
+      valorPago,
+      troco
     });
 
     const itensDiscriminados = itensDetalhados.map(

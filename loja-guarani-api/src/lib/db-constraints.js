@@ -23,8 +23,13 @@ async function aplicarConstraintsBanco(prisma) {
      WHEN NEW.quantidade_atual < 0
      BEGIN SELECT RAISE(ABORT, 'check_violation: quantidade_atual nao pode ser negativa'); END;`,
     `CREATE TRIGGER IF NOT EXISTS chk_lotes_datas_ins BEFORE INSERT ON lotes
-     WHEN NEW.data_validade IS NOT NULL AND NEW.data_validade < NEW.data_compra
-     BEGIN SELECT RAISE(ABORT, 'check_violation: data_validade anterior a data_compra'); END;`,
+     WHEN (NEW.data_validade IS NOT NULL AND NEW.data_compra IS NOT NULL AND NEW.data_validade < NEW.data_compra)
+       OR (NEW.data_validade IS NOT NULL AND NEW.data_fabricacao IS NOT NULL AND NEW.data_validade < NEW.data_fabricacao)
+     BEGIN SELECT RAISE(ABORT, 'check_violation: data_validade inconsistente com fabricacao ou compra'); END;`,
+    `CREATE TRIGGER IF NOT EXISTS chk_lotes_datas_upd BEFORE UPDATE ON lotes
+     WHEN (NEW.data_validade IS NOT NULL AND NEW.data_compra IS NOT NULL AND NEW.data_validade < NEW.data_compra)
+       OR (NEW.data_validade IS NOT NULL AND NEW.data_fabricacao IS NOT NULL AND NEW.data_validade < NEW.data_fabricacao)
+     BEGIN SELECT RAISE(ABORT, 'check_violation: data_validade inconsistente com fabricacao ou compra'); END;`,
     `CREATE TRIGGER IF NOT EXISTS chk_produtos_saldos_upd BEFORE UPDATE ON produtos
      WHEN NEW.estoque_atual < 0 OR NEW.estoque_reservado < 0 OR NEW.preco_p_unid <= 0
      BEGIN SELECT RAISE(ABORT, 'check_violation: saldo ou preco invalido em produtos'); END;`,

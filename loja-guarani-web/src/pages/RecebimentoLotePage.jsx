@@ -196,6 +196,16 @@ export function RecebimentoLotePage() {
       return;
     }
 
+    if (dataFabricacao && dataValidade && dataValidade < dataFabricacao) {
+      alertaErro("A data de validade não pode ser anterior à data de fabricação do lote.");
+      return;
+    }
+
+    if (dataCompra && dataValidade && dataValidade < dataCompra) {
+      alertaErro("A data de validade não pode ser anterior à data de compra do lote.");
+      return;
+    }
+
     try {
       const payload = {
         idOc: idOc ? Number(idOc) : undefined,
@@ -324,17 +334,19 @@ export function RecebimentoLotePage() {
               <input
                 type="date"
                 value={dataFabricacao}
+                max={dataValidade || undefined}
                 onChange={(e) => setDataFabricacao(e.target.value)}
               />
             </label>
 
             <label>
               <span>
-                Data de Validade <TooltipInfo text="Obrigatório para artigos perecíveis (colas, tintas). Deve ser maior ou igual à data de compra." />
+                Data de Validade <TooltipInfo text="Obrigatório para artigos perecíveis (colas, tintas). Deve ser maior ou igual à data de compra e à data de fabricação." />
               </span>
               <input
                 type="date"
                 value={dataValidade}
+                min={dataFabricacao || dataCompra || undefined}
                 onChange={(e) => setDataValidade(e.target.value)}
               />
             </label>

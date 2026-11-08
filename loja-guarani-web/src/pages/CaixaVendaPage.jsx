@@ -112,6 +112,7 @@ export function CaixaVendaPage() {
   // Cálculo Dinâmico de Troco
   const valorPagoNum = Number(valorPago || 0);
   const trocoCalculado = valorPagoNum > valorTotalCalculado ? Number((valorPagoNum - valorTotalCalculado).toFixed(2)) : 0;
+  const valorInsuficiente = formaPagamento === "DINHEIRO" && (valorPagoNum < valorTotalCalculado || !valorPago);
 
   // Recalcular Preview FIFO sempre que mudar pedido, produto ou quantidade
   useEffect(() => {
@@ -166,6 +167,22 @@ export function CaixaVendaPage() {
   const handleFinalizarVenda = async (e) => {
     e.preventDefault();
 
+    if (formaPagamento === "DINHEIRO") {
+      if (valorPagoNum < valorTotalCalculado) {
+        alertaErro(
+          `Valor recebido em dinheiro (${formatarMoeda(valorPagoNum)}) é insuficiente para cobrir o total (${formatarMoeda(valorTotalCalculado)}).`
+        );
+        return;
+      }
+    }
+
+    if (subtotal > 0 && descNum > Number((subtotal * 0.15).toFixed(2))) {
+      const confirma = window.confirm(
+        `Atenção: O desconto comercial de ${formatarMoeda(descNum)} ultrapassa 15% do subtotal da venda (${formatarMoeda(subtotal)}). Deseja confirmar este desconto comercial?`
+      );
+      if (!confirma) return;
+    }
+
     try {
       let payload;
       if (pedidoSelecionado) {
@@ -182,6 +199,7 @@ export function CaixaVendaPage() {
           })),
           formaPagamento,
           desconto: descNum,
+          valorPagoEmDinheiro: formaPagamento === "DINHEIRO" ? valorPagoNum : undefined,
           cpfCnpjNota: cpfCnpjNota || undefined,
           simularFalhaSat
         };
@@ -195,6 +213,7 @@ export function CaixaVendaPage() {
           quantidade: Number(quantidade),
           formaPagamento,
           desconto: descNum,
+          valorPagoEmDinheiro: formaPagamento === "DINHEIRO" ? valorPagoNum : undefined,
           cpfCnpjNota: cpfCnpjNota || undefined,
           simularFalhaSat
         };
@@ -485,33 +504,6 @@ export function CaixaVendaPage() {
               </label>
             </div>
 
-            {/* Campos de Valor Pago e Troco Dinâmico */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
-              <label>
-                <span>Valor pago pelo cliente (R$)</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="mono"
-                  placeholder="0.00"
-                  value={valorPago}
-                  onChange={(e) => setValorPago(e.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Troco (R$)</span>
-                <input
-                  type="text"
-                  readOnly
-                  className="readonly-field mono"
-                  style={{ fontWeight: "700", color: "#1D4ED8" }}
-                  value={formatarMoeda(trocoCalculado)}
-                />
-              </label>
-            </div>
-
             {/* Opções de Pagamento e Fiscal (Com CPF/CNPJ bloqueado se houver cliente associado) */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
               <label>
@@ -541,6 +533,46 @@ export function CaixaVendaPage() {
                 />
               </label>
             </div>
+
+            {/* Seção Exclusiva para Pagamento em Dinheiro e Troco (Item 1) */}
+            {formaPagamento === "DINHEIRO" && (
+              <div style={{ marginTop: "14px", padding: "14px", backgroundColor: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: "6px" }}>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: "#166534", marginBottom: "10px" }}>
+                  💵 Conferência de Pagamento em Dinheiro &amp; Troco
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <label>
+                    <span>Valor Entregue pelo Cliente (R$) <span className="req-asterisk">*</span></span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="mono"
+                      placeholder="0.00"
+                      value={valorPago}
+                      onChange={(e) => setValorPago(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    <span>Troco a Devolver (R$)</span>
+                    <input
+                      type="text"
+                      readOnly
+                      className="readonly-field mono"
+                      style={{ fontWeight: "700", color: "#1D4ED8", fontSize: "16px" }}
+                      value={formatarMoeda(trocoCalculado)}
+                    />
+                  </label>
+                </div>
+                {valorPago && valorPagoNum < valorTotalCalculado && (
+                  <div style={{ color: "#DC2626", fontWeight: "600", fontSize: "13px", marginTop: "8px" }}>
+                    ⚠️ Valor recebido ({formatarMoeda(valorPagoNum)}) é insuficiente para cobrir o total ({formatarMoeda(valorTotalCalculado)}).
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Preview do Motor PEPS/FIFO (Múltiplos Itens ou Item Único) */}
             {previewLotes && previewLotes.length > 0 && (
@@ -638,8 +670,15 @@ export function CaixaVendaPage() {
               <button
                 id="btn-finalizar-venda"
                 type="submit"
+                disabled={valorInsuficiente}
                 className="btn btn-primary"
-                style={{ height: "46px", padding: "0 32px", fontSize: "15px" }}
+                style={{
+                  height: "46px",
+                  padding: "0 32px",
+                  fontSize: "15px",
+                  opacity: valorInsuficiente ? 0.6 : 1,
+                  cursor: valorInsuficiente ? "not-allowed" : "pointer"
+                }}
               >
                 <ShoppingCart size={18} />
                 <span>Confirmar Venda, Baixar Lote (FIFO) e Emitir SAT (F10)</span>

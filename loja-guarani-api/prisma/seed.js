@@ -647,6 +647,15 @@ async function main() {
         idUsuario: roberto.idUsuario
       },
       {
+        idLote: lote1002.idLote,
+        idLocal: locPratC01.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 30,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
+      },
+      {
         idLote: lote1005.idLote,
         idLocal: locGavA02.idLocal,
         tipo: "ENTRADA",
@@ -654,6 +663,51 @@ async function main() {
         justificativa: "RECEBIMENTO",
         observacao: "Carga inicial de estoque",
         idUsuario: sergio.idUsuario
+      },
+      {
+        idLote: lote1008.idLote,
+        idLocal: locPratC01.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 25,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
+      },
+      {
+        idLote: lote1010.idLote,
+        idLocal: locGavA02.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 12,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
+      },
+      {
+        idLote: lote1015.idLote,
+        idLocal: locGavA01.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 4,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
+      },
+      {
+        idLote: lote1045.idLote,
+        idLocal: locGavB04.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 15,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
+      },
+      {
+        idLote: lote1046.idLote,
+        idLocal: locGavB04.idLocal,
+        tipo: "ENTRADA",
+        quantidade: 6,
+        justificativa: "RECEBIMENTO",
+        observacao: "Carga inicial de estoque",
+        idUsuario: roberto.idUsuario
       }
     ]
   });

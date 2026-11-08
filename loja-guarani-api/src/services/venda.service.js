@@ -128,6 +128,7 @@ class VendaService {
       cpfCnpjNota,
       formaPagamento = "PIX",
       desconto = 0,
+      valorPagoEmDinheiro,
       simularFalhaSat = false
     } = payload;
 
@@ -397,6 +398,20 @@ class VendaService {
 
       const valorTotalFinal = Number((subtotalVenda - descontoNum).toFixed(2));
 
+      // Validação de recebimento em dinheiro (Item 1 / TC-REM-01)
+      let troco = 0;
+      let valorPagoEfetivo = valorTotalFinal;
+      if (formaPagamento === "DINHEIRO") {
+        const valorPagoNum = Number(payload.valorPagoEmDinheiro ?? payload.valorPago ?? 0);
+        if (valorPagoNum < valorTotalFinal) {
+          throw new ErroDeNegocio(
+            `Valor recebido em dinheiro (R$ ${valorPagoNum.toFixed(2)}) é insuficiente para o total da venda (R$ ${valorTotalFinal.toFixed(2)}).`
+          );
+        }
+        valorPagoEfetivo = valorPagoNum;
+        troco = Number((valorPagoNum - valorTotalFinal).toFixed(2));
+      }
+
       // 3. Emissão Fiscal SAT (Portaria CAT 147/2012 — RF18 / RNF06)
       // Se simularFalhaSat for true, a função lançará ErroDeNegocio e o Prisma executará Rollback total!
       const cupomSat = await satFiscalService.emitirCupomFiscal({
@@ -405,6 +420,8 @@ class VendaService {
         desconto: descontoNum,
         formaPagamento,
         cpfCnpjNota,
+        valorPago: valorPagoEfetivo,
+        troco,
         simularFalhaSat
       });
 

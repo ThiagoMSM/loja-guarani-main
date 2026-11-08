@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { formatarMoeda, formatarDataHora } from "../utils/formatters";
+import { formatarMoeda, formatarDataHora, validarCPF, validarCNPJ, mascaraDocumento, limparDigitos } from "../utils/formatters";
 import { Modal } from "../components/Modal";
 import { Badge } from "../components/Badge";
 import {
@@ -186,6 +186,16 @@ export function PedidoBalcaoPage() {
     if (!ehConsumidorFinal && !novoClienteDoc.trim()) {
       alertaErro("O preenchimento do CPF ou CNPJ é obrigatório para clientes cadastrados (exceto para Consumidor Final / Balcão).");
       return;
+    }
+
+    if (novoClienteDoc.trim()) {
+      const docLimpo = limparDigitos(novoClienteDoc);
+      const ehCpfValido = docLimpo.length === 11 && validarCPF(docLimpo);
+      const ehCnpjValido = docLimpo.length === 14 && validarCNPJ(docLimpo);
+      if (!ehCpfValido && !ehCnpjValido) {
+        alertaErro("CPF ou CNPJ inválido. Verifique os dígitos verificadores informados.");
+        return;
+      }
     }
 
     try {
@@ -562,7 +572,7 @@ export function PedidoBalcaoPage() {
               className="mono"
               placeholder="000.000.000-00 ou 00.000.000/0001-00"
               value={novoClienteDoc}
-              onChange={(e) => setNovoClienteDoc(e.target.value)}
+              onChange={(e) => setNovoClienteDoc(mascaraDocumento(e.target.value))}
             />
           </label>
           <label>

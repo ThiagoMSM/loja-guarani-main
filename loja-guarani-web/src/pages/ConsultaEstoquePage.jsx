@@ -93,6 +93,7 @@ export function ConsultaEstoquePage() {
     "Locais Físicos",
     "Estoque Total",
     "Reservado",
+    "Vencido / Bloq.",
     "Saldo Livre",
     "Mínimo",
     "Situação"
@@ -106,6 +107,7 @@ export function ConsultaEstoquePage() {
     it.locaisFisicos,
     it.estoqueTotal,
     it.estoqueReservado,
+    it.saldoVencido || 0,
     it.saldoLivre,
     it.estoqueMin,
     it.situacao
@@ -195,6 +197,7 @@ export function ConsultaEstoquePage() {
               <option value="RESERVADO">Com Reserva Ativa no Balcão</option>
               <option value="ABAIXO_MINIMO">Abaixo do Estoque Mínimo</option>
               <option value="EM_FALTA">Zerado / Em Falta</option>
+              <option value="LOTE_VENCIDO">Lote Vencido (Bloqueado p/ Venda)</option>
             </select>
           </label>
 
@@ -257,6 +260,7 @@ export function ConsultaEstoquePage() {
                   <th>Gaveteiro(s)</th>
                   <th>Estoque Total</th>
                   <th>Reservado</th>
+                  <th>Vencido / Bloq.</th>
                   <th>Saldo Livre</th>
                   <th>Estoque Mínimo</th>
                   <th>Situação</th>
@@ -266,7 +270,7 @@ export function ConsultaEstoquePage() {
               <tbody>
                 {itens.map((it) => {
                   let sitVariant = "success";
-                  if (it.situacao === "EM_FALTA") sitVariant = "danger";
+                  if (it.situacao === "EM_FALTA" || it.situacao === "LOTE_VENCIDO") sitVariant = "danger";
                   else if (it.situacao === "ABAIXO_MINIMO") sitVariant = "warning";
                   else if (it.situacao === "RESERVADO") sitVariant = "info";
 
@@ -292,6 +296,9 @@ export function ConsultaEstoquePage() {
                       </td>
                       <td className="mono" style={{ color: it.estoqueReservado > 0 ? "#0284C7" : "#94A3B8" }}>
                         {it.estoqueReservado} {it.unidMedida}
+                      </td>
+                      <td className="mono" style={{ color: it.saldoVencido > 0 ? "#DC2626" : "#94A3B8", fontWeight: it.saldoVencido > 0 ? "700" : "normal" }}>
+                        {it.saldoVencido > 0 ? `${it.saldoVencido} ${it.unidMedida}` : "-"}
                       </td>
                       <td className="mono" style={{ fontWeight: "700", color: it.saldoLivre > 0 ? "#166534" : "#DC2626" }}>
                         {it.saldoLivre} {it.unidMedida}

@@ -2,6 +2,23 @@ const prisma = require("../lib/prisma");
 const { ErroDeNegocio, ErroNaoEncontrado } = require("../lib/errors");
 
 class LoteService {
+  async atualizarStatusLotesVencidos() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    return prisma.lote.updateMany({
+      where: {
+        status: "DISPONIVEL",
+        dataValidade: {
+          lt: hoje
+        }
+      },
+      data: {
+        status: "VENCIDO"
+      }
+    });
+  }
+
   async listar(filtros = {}) {
     const where = {};
     if (filtros.idProd) {
@@ -92,12 +109,12 @@ class LoteService {
 
     // Regra RN10: A data_validade (quando informada) deve ser maior ou igual à data_compra e à data_fabricacao
     if (dValidade) {
-      if (dValidade < dCompra) {
+      if (dFabricacao && dValidade < dFabricacao) {
         throw new ErroDeNegocio(
-          "A data de validade não pode ser anterior à data de compra/fabricação do lote."
+          "A data de validade não pode ser anterior à data de fabricação do lote."
         );
       }
-      if (dFabricacao && dValidade < dFabricacao) {
+      if (dValidade < dCompra) {
         throw new ErroDeNegocio(
           "A data de validade não pode ser anterior à data de compra/fabricação do lote."
         );
@@ -264,10 +281,16 @@ class LoteService {
     const lote = await this.buscarPorId(idLote);
 
     const dCompra = dados.dataCompra ? new Date(dados.dataCompra) : lote.dataCompra;
+    const dFabricacao = dados.dataFabricacao !== undefined ? (dados.dataFabricacao ? new Date(dados.dataFabricacao) : null) : lote.dataFabricacao;
     const dValidade = dados.dataValidade !== undefined ? (dados.dataValidade ? new Date(dados.dataValidade) : null) : lote.dataValidade;
 
-    if (dValidade && dValidade < dCompra) {
-      throw new ErroDeNegocio("A data de validade não pode ser anterior à data de compra.");
+    if (dValidade) {
+      if (dFabricacao && dValidade < dFabricacao) {
+        throw new ErroDeNegocio("A data de validade não pode ser anterior à data de fabricação do lote.");
+      }
+      if (dCompra && dValidade < dCompra) {
+        throw new ErroDeNegocio("A data de validade não pode ser anterior à data de compra.");
+      }
     }
 
     return prisma.lote.update({
