@@ -477,6 +477,9 @@ export function OrdensCompraPage() {
                           <th>Quantidade Recebida</th>
                           <th>Preço Unitário</th>
                           <th style={{ textAlign: "right" }}>Subtotal</th>
+                          {isProprietario && (oc.status === "AGUARDANDO_RECEBIMENTO" || oc.status === "PARCIALMENTE_ATENDIDA") && (
+                            <th style={{ textAlign: "center", width: "90px" }}>Ação</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -492,6 +495,25 @@ export function OrdensCompraPage() {
                             <td className="mono" style={{ textAlign: "right" }}>
                               {formatarMoeda(it.quantidadePedida * it.precoUnitCompra)}
                             </td>
+                            {isProprietario && (oc.status === "AGUARDANDO_RECEBIMENTO" || oc.status === "PARCIALMENTE_ATENDIDA") && (
+                              <td style={{ textAlign: "center" }}>
+                                {it.quantidadeRecebida < it.quantidadePedida ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: "3px 8px", fontSize: "12px" }}
+                                    onClick={() => navigate(`/recebimento?idOc=${oc.idOc}&idProd=${it.idProd}`)}
+                                    title={`Receber ${it.produto.nome}`}
+                                  >
+                                    Receber
+                                  </button>
+                                ) : (
+                                  <span style={{ fontSize: "11px", color: "#166534", fontWeight: "600" }}>
+                                    Entregue
+                                  </span>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

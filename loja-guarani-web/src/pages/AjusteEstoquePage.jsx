@@ -112,8 +112,13 @@ export function AjusteEstoquePage() {
               setLocaisDisponiveis(locais);
               if (paramLocal) {
                 setForm((prev) => ({ ...prev, idLocal: String(paramLocal) }));
-              } else if (locais.length > 0) {
+              } else if (locais.length === 1) {
                 setForm((prev) => ({ ...prev, idLocal: String(locais[0].idLocal) }));
+              } else if (locais.length > 1) {
+                const localComSaldo = locais.find((ll) => Number(ll.quantidade) > 0);
+                if (localComSaldo) {
+                  setForm((prev) => ({ ...prev, idLocal: String(localComSaldo.idLocal) }));
+                }
               }
             }
           }
@@ -352,7 +357,7 @@ export function AjusteEstoquePage() {
             <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "var(--color-navy)" }}>
               Ajuste Manual e Auditoria de Estoque
             </h1>
-            <TooltipInfo texto="Operação exclusiva da Proprietária. Permite regularizações de estoque por quebra, vencimento, furto ou inventário físico, com registro imutável no histórico de movimentações." />
+            <TooltipInfo texto="Operação exclusiva do Proprietário. Permite regularizações de estoque por quebra, vencimento, furto ou inventário físico, com registro imutável no histórico de movimentações." />
           </div>
           <p style={{ color: "#64748B", fontSize: "0.875rem", marginTop: "4px" }}>
             Realize baixas e entradas avulsas com justificativa mandatória e consulte o log de movimentações à prova de adulteração.
@@ -373,7 +378,7 @@ export function AjusteEstoquePage() {
               fontWeight: "600"
             }}
           >
-            <ShieldCheck size={14} /> Perfil Exclusivo: Proprietária
+            <ShieldCheck size={14} /> Perfil Exclusivo: Proprietário
           </span>
         </div>
       </div>

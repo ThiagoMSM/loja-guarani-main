@@ -180,6 +180,13 @@ class LoteService {
           "Ordem de Compra inválida, cancelada ou já integralmente atendida."
         );
       }
+
+      const itemNaOc = oc.itens.find((it) => it.idProd === produto.idProd);
+      if (!itemNaOc) {
+        throw new ErroDeNegocio(
+          "O produto informado não faz parte desta Ordem de Compra."
+        );
+      }
     }
 
     return prisma.$transaction(async (tx) => {

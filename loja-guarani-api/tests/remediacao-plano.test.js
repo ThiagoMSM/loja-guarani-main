@@ -418,4 +418,116 @@ describe("Suite de Testes de Remediação — Plano de Não-Conformidades (TC-RE
     });
   });
 
+  // =========================================================================
+  // TC-REM-09: Recebimento de Múltiplos Itens em Ordem de Compra
+  // =========================================================================
+  describe("Recebimento Multi-Item em Ordem de Compra (OC com mais de 1 item)", () => {
+    test("Deve permitir receber sequencialmente cada item da OC e atualizar status para PARCIALMENTE_ATENDIDA e ATENDIDA", async () => {
+      // 1. Obter produtos e fornecedor ativo
+      const resProds = await request(app)
+        .get("/api/produtos")
+        .set("Authorization", `Bearer ${tokenProprietario}`);
+      expect(resProds.body.length).toBeGreaterThanOrEqual(2);
+      const prod1 = resProds.body[0];
+      const prod2 = resProds.body[1];
+
+      const resFornecs = await request(app)
+        .get("/api/fornecedores")
+        .set("Authorization", `Bearer ${tokenProprietario}`);
+      const fornec = resFornecs.body.find((f) => f.status === "ATIVO") || resFornecs.body[0];
+
+      const resLocais = await request(app)
+        .get("/api/locais")
+        .set("Authorization", `Bearer ${tokenProprietario}`);
+      const local = resLocais.body[0];
+
+      // 2. Emitir OC com 2 itens
+      const resOc = await request(app)
+        .post("/api/ordens-compra")
+        .set("Authorization", `Bearer ${tokenProprietario}`)
+        .send({
+          idFornec: fornec.idFornec,
+          condicoesPagto: "30 DIAS",
+          itens: [
+            { idProd: prod1.idProd, quantidadePedida: 10, precoUnitCompra: 5.50 },
+            { idProd: prod2.idProd, quantidadePedida: 8, precoUnitCompra: 12.00 }
+          ]
+        });
+
+      expect(resOc.status).toBe(201);
+      const idOc = resOc.body.idOc;
+      expect(resOc.body.status).toBe("AGUARDANDO_RECEBIMENTO");
+
+      // 3. Tentar receber um produto que NÃO pertence à OC -> deve ser rejeitado
+      const prodInvalido = resProds.body.find((p) => p.idProd !== prod1.idProd && p.idProd !== prod2.idProd);
+      if (prodInvalido) {
+        const resInvalido = await request(app)
+          .post("/api/lotes/recebimento")
+          .set("Authorization", `Bearer ${tokenProprietario}`)
+          .send({
+            idOc,
+            idProd: prodInvalido.idProd,
+            numLote: `LT-TEST-INV-${Date.now()}`,
+            dataCompra: new Date().toISOString().slice(0, 10),
+            quantidadeRecebida: 5,
+            alocacoes: [{ idLocal: local.idLocal, quantidade: 5 }]
+          });
+        expect(resInvalido.status).toBe(400);
+        expect(resInvalido.body.erro).toMatch(/não faz parte desta Ordem de Compra/i);
+      }
+
+      // 4. Receber o Item 1 da OC (10 un)
+      const resReceber1 = await request(app)
+        .post("/api/lotes/recebimento")
+        .set("Authorization", `Bearer ${tokenProprietario}`)
+        .send({
+          idOc,
+          idProd: prod1.idProd,
+          numLote: `LT-TEST-IT1-${Date.now()}`,
+          dataCompra: new Date().toISOString().slice(0, 10),
+          quantidadeRecebida: 10,
+          alocacoes: [{ idLocal: local.idLocal, quantidade: 10 }]
+        });
+
+      expect(resReceber1.status).toBe(201);
+
+      // Verificar que a OC agora está PARCIALMENTE_ATENDIDA
+      const resOcParcial = await request(app)
+        .get(`/api/ordens-compra/${idOc}`)
+        .set("Authorization", `Bearer ${tokenProprietario}`);
+
+      expect(resOcParcial.body.status).toBe("PARCIALMENTE_ATENDIDA");
+      const item1 = resOcParcial.body.itens.find((it) => it.idProd === prod1.idProd);
+      const item2 = resOcParcial.body.itens.find((it) => it.idProd === prod2.idProd);
+      expect(item1.quantidadeRecebida).toBe(10);
+      expect(item2.quantidadeRecebida).toBe(0);
+
+      // 5. Receber o Item 2 da OC (8 un)
+      const resReceber2 = await request(app)
+        .post("/api/lotes/recebimento")
+        .set("Authorization", `Bearer ${tokenProprietario}`)
+        .send({
+          idOc,
+          idProd: prod2.idProd,
+          numLote: `LT-TEST-IT2-${Date.now()}`,
+          dataCompra: new Date().toISOString().slice(0, 10),
+          quantidadeRecebida: 8,
+          alocacoes: [{ idLocal: local.idLocal, quantidade: 8 }]
+        });
+
+      expect(resReceber2.status).toBe(201);
+
+      // Verificar que a OC agora está integralmente ATENDIDA
+      const resOcFinal = await request(app)
+        .get(`/api/ordens-compra/${idOc}`)
+        .set("Authorization", `Bearer ${tokenProprietario}`);
+
+      expect(resOcFinal.body.status).toBe("ATENDIDA");
+      const item1Final = resOcFinal.body.itens.find((it) => it.idProd === prod1.idProd);
+      const item2Final = resOcFinal.body.itens.find((it) => it.idProd === prod2.idProd);
+      expect(item1Final.quantidadeRecebida).toBe(10);
+      expect(item2Final.quantidadeRecebida).toBe(8);
+    });
+  });
+
 });

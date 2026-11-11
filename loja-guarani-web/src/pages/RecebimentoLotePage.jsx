@@ -54,28 +54,29 @@ export function RecebimentoLotePage() {
         setAlocacoes([{ idLocal: resLoc[0].idLocal, quantidade: "" }]);
       }
 
-      // Se passou idProd via query param
-      const prodParam = searchParams.get("idProd");
-      if (prodParam) {
-        setIdProd(String(prodParam));
-      }
-
       // Se passou idOc via query param
       const ocParam = searchParams.get("idOc");
+      const prodParam = searchParams.get("idProd");
       if (ocParam) {
         const ocSelecionada = ocsPendentes.find((o) => o.idOc === Number(ocParam));
-        if (ocSelecionada && ocSelecionada.itens.length > 0) {
+        if (ocSelecionada && ocSelecionada.itens && ocSelecionada.itens.length > 0) {
           setIdOc(String(ocSelecionada.idOc));
-          setIdProd(String(ocSelecionada.itens[0].idProd));
+          const itemAlvo = prodParam
+            ? ocSelecionada.itens.find((it) => it.idProd === Number(prodParam)) || ocSelecionada.itens[0]
+            : ocSelecionada.itens.find((it) => it.quantidadeRecebida < it.quantidadePedida) || ocSelecionada.itens[0];
+
+          setIdProd(String(itemAlvo.idProd));
           if (ocSelecionada.dataEmissao) {
             setDataCompra(ocSelecionada.dataEmissao.slice(0, 10));
           }
-          const restante = Math.max(0, ocSelecionada.itens[0].quantidadePedida - ocSelecionada.itens[0].quantidadeRecebida);
+          const restante = Math.max(0, itemAlvo.quantidadePedida - itemAlvo.quantidadeRecebida);
           setQuantidadeRecebida(String(restante));
           if (resLoc.length > 0) {
             setAlocacoes([{ idLocal: resLoc[0].idLocal, quantidade: String(restante) }]);
           }
         }
+      } else if (prodParam) {
+        setIdProd(String(prodParam));
       }
     } catch (err) {
       alertaErro(err.message || "Erro ao carregar dados de recebimento.");
@@ -150,7 +151,7 @@ export function RecebimentoLotePage() {
       if (item) {
         const restante = Math.max(0, item.quantidadePedida - item.quantidadeRecebida);
         setQuantidadeRecebida(String(restante));
-        if (locais.length > 0 && alocacoes.length <= 1) {
+        if (locais.length > 0) {
           setAlocacoes([{ idLocal: locais[0].idLocal, quantidade: String(restante) }]);
         }
       }
@@ -232,6 +233,23 @@ export function RecebimentoLotePage() {
     }
   };
 
+  const ocVinculada = ocs.find((o) => o.idOc === Number(idOc));
+  const produtosExibidos = (temOcVinculada && ocVinculada && ocVinculada.itens?.length > 0)
+    ? ocVinculada.itens.map((it) => {
+        const pendente = Math.max(0, it.quantidadePedida - it.quantidadeRecebida);
+        const skuStr = it.produto?.sku ? `SKU ${it.produto.sku} — ` : "";
+        const nomeStr = it.produto?.nome || `Produto #${it.idProd}`;
+        const unidStr = it.produto?.unidMedida || "UN";
+        return {
+          idProd: it.idProd,
+          rotulo: `${skuStr}${nomeStr} (Pendente: ${pendente} ${unidStr} / Pedido: ${it.quantidadePedida} ${unidStr})`
+        };
+      })
+    : produtos.map((p) => ({
+        idProd: p.idProd,
+        rotulo: `SKU ${p.sku} — ${p.nome} (Atual: ${p.estoqueAtual} ${p.unidMedida})`
+      }));
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "900px", margin: "0 auto" }}>
       <div>
@@ -274,24 +292,22 @@ export function RecebimentoLotePage() {
             </label>
           </div>
 
-          {/* Dados do Produto e Lote (Com bloqueio automático condicional se houver OC) */}
+          {/* Dados do Produto e Lote */}
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)", gap: "14px" }}>
             <label>
               <span>
                 Produto / Aviamento Recebido <span className="req-asterisk">*</span>
-                {temOcVinculada && <span style={{ fontSize: "11px", color: "#1D4ED8", marginLeft: "6px" }}>(Bloqueado pela OC)</span>}
+                {temOcVinculada && <span style={{ fontSize: "11px", color: "#1D4ED8", marginLeft: "6px" }}>(Itens da Ordem de Compra)</span>}
               </span>
               <select 
                 required 
                 value={idProd} 
-                disabled={temOcVinculada}
-                className={temOcVinculada ? "readonly-field" : ""}
                 onChange={(e) => handleMudarProduto(e.target.value)}
               >
                 <option value="">Selecione o produto...</option>
-                {produtos.map((p) => (
+                {produtosExibidos.map((p) => (
                   <option key={p.idProd} value={String(p.idProd)}>
-                    SKU {p.sku} — {p.nome} (Atual: {p.estoqueAtual} {p.unidMedida})
+                    {p.rotulo}
                   </option>
                 ))}
               </select>

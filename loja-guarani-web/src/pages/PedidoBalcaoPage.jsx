@@ -17,6 +17,29 @@ import {
   Ban
 } from "lucide-react";
 
+function extrairLocaisProduto(p, fallback = "Não endereçado") {
+  if (!p || !p.lotes || p.lotes.length === 0) return fallback;
+
+  // Considerar prioritariamente lotes com saldo ativo e disponíveis
+  const lotesAtivos = p.lotes.filter(
+    (l) => Number(l.quantidadeAtual) > 0 && l.status === "DISPONIVEL"
+  );
+  const lotesParaChecar = lotesAtivos.length > 0 ? lotesAtivos : p.lotes;
+
+  const codigos = new Set();
+  for (const lote of lotesParaChecar) {
+    if (lote.locais && lote.locais.length > 0) {
+      for (const aloc of lote.locais) {
+        if (aloc.local?.codigo && (Number(aloc.quantidade) > 0 || lotesAtivos.length === 0)) {
+          codigos.add(aloc.local.codigo);
+        }
+      }
+    }
+  }
+
+  return codigos.size > 0 ? Array.from(codigos).join(", ") : fallback;
+}
+
 export function PedidoBalcaoPage() {
   const { user, isProprietario } = useAuth();
   const { alertaSucesso, alertaErro } = useToast();
@@ -121,7 +144,7 @@ export function PedidoBalcaoPage() {
           unidMedida: produtoSelecionado.unidMedida,
           precoUnit: produtoSelecionado.precoPUnid,
           quantidade: qtd,
-          gaveteiro: produtoSelecionado.lotes?.[0]?.locais?.[0]?.local?.codigo || "Balcão"
+          gaveteiro: extrairLocaisProduto(produtoSelecionado, "Balcão")
         }
       ]);
     }
@@ -272,7 +295,7 @@ export function PedidoBalcaoPage() {
                   }}
                 >
                   {produtosSugeridos.map((p) => {
-                    const gaveteiro = p.lotes?.[0]?.locais?.[0]?.local?.codigo || "Não endereçado";
+                    const gaveteiro = extrairLocaisProduto(p, "Não endereçado");
                     return (
                       <div
                         key={p.idProd}
@@ -330,7 +353,7 @@ export function PedidoBalcaoPage() {
                 </div>
 
                 <div style={{ fontSize: "12px", color: "#475569", marginBottom: "10px" }}>
-                  Localização: <strong className="mono">{produtoSelecionado.lotes?.[0]?.locais?.[0]?.local?.codigo || "Balcão"}</strong> | Preço: <strong className="mono">{formatarMoeda(produtoSelecionado.precoPUnid)}</strong>
+                  Localização: <strong className="mono">{extrairLocaisProduto(produtoSelecionado, "Balcão")}</strong> | Preço: <strong className="mono">{formatarMoeda(produtoSelecionado.precoPUnid)}</strong>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "flex-end" }}>
