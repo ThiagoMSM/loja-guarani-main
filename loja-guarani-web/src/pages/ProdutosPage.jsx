@@ -185,7 +185,7 @@ export function ProdutosPage() {
 
       <div className="grid-4-8">
         {/* Coluna Formulário (4 colunas) */}
-        <div className="card">
+        <div className="card" style={{ alignSelf: "start" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
             <Package size={20} color="#1D4ED8" />
             <h2>{idEditando ? "Editar Aviamento" : "Adicionar Produto"}</h2>
@@ -387,7 +387,7 @@ export function ProdutosPage() {
         </div>
 
         {/* Coluna Listagem (8 colunas) */}
-        <div className="card">
+        <div className="card" style={{ display: "flex", flexDirection: "column", alignSelf: "start" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
             <h2>Catálogo de Aviamentos ({produtosFiltrados.length})</h2>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -416,8 +416,22 @@ export function ProdutosPage() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
-            {produtosFiltrados.map((p) => (
+          <div
+            className="scrollable-y"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "12px",
+              maxHeight: "clamp(480px, calc(100vh - 220px), 720px)",
+              paddingRight: "6px"
+            }}
+          >
+            {produtosFiltrados.length === 0 ? (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "40px 20px", color: "#64748B", backgroundColor: "#F8FAFC", borderRadius: "6px" }}>
+                Nenhum aviamento encontrado para os filtros selecionados.
+              </div>
+            ) : (
+              produtosFiltrados.map((p) => (
               <div
                 key={p.idProd}
                 style={{
@@ -491,7 +505,7 @@ export function ProdutosPage() {
                   </div>
                 )}
               </div>
-            ))}
+            )))}
           </div>
         </div>
       </div>

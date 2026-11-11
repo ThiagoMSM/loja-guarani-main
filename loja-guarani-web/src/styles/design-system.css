@@ -383,3 +383,23 @@ tr:hover td {
     font-size: 11px;
   }
 }
+
+/* Scrollbar customizada e containers roláveis */
+.scrollable-y {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+.scrollable-y::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollable-y::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+.scrollable-y::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
